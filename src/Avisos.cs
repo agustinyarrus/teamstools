@@ -134,8 +134,10 @@ namespace TeamsTools
             List<Aviso> res;
             try { res = f() ?? new List<Aviso>(); } catch { res = new List<Aviso>(); }
             foreach (var a in res) { a.Modelo = nombre; if (a.Tinte == Tema.TextoSuave) a.Tinte = t; }
-            Avisos.AddRange(res);
-            Lectores.Add(new Lector { Nombre = nombre, Que = que, Tinte = t, Encontrados = res.Count, Ms = r.ElapsedMilliseconds });
+            // 🚨 copy-on-write: la pantalla recorre estas listas en el hilo de la UI mientras el radar sigue corriendo
+            //    de fondo; agregar sobre la MISMA lista daba «Collection was modified» a mitad de un refresco.
+            Avisos = Avisos.Concat(res).ToList();
+            Lectores = Lectores.Concat(new[] { new Lector { Nombre = nombre, Que = que, Tinte = t, Encontrados = res.Count, Ms = r.ElapsedMilliseconds } }).ToList();
         }
 
         void MedirNotas(string nombre, string que, Color t, Func<List<Nota>> f)
@@ -144,8 +146,8 @@ namespace TeamsTools
             List<Nota> res;
             try { res = f() ?? new List<Nota>(); } catch { res = new List<Nota>(); }
             foreach (var n in res) n.Modelo = nombre;
-            Notas.AddRange(res);
-            Lectores.Add(new Lector { Nombre = nombre, Que = que, Tinte = t, Encontrados = res.Count, Ms = r.ElapsedMilliseconds });
+            Notas = Notas.Concat(res).ToList();      // copy-on-write, ídem Avisos
+            Lectores = Lectores.Concat(new[] { new Lector { Nombre = nombre, Que = que, Tinte = t, Encontrados = res.Count, Ms = r.ElapsedMilliseconds } }).ToList();
         }
 
         // ------------------------------------------------------------------ los lectores

@@ -331,6 +331,13 @@ namespace TeamsTools
                 TomarFotoYa();
         }
 
+        /// <summary>
+        /// 🚨 Las fichas y la cronología del vigía se llenan en el latido, y sólo con la ventana VISIBLE (tic par):
+        /// con la app escondida en la bandeja, la foto salía con «sin datos» según cayera el tic. Para la foto se
+        /// llenan a mano, como haría el latido.
+        /// </summary>
+        void RefrescarVigia() { if (pestanas.Activa == 0) LlenarFichas(); }
+
         void TomarFotoYa()
         {
             string pedido = Path.Combine(Program.CarpetaDatos, "foto-pedido.txt");
@@ -359,14 +366,14 @@ namespace TeamsTools
                     Win32.ShowWindow(Handle, Win32.SW_SHOWNOACTIVATE);
                 }
                 pestanas.Activa = Math.Max(0, Math.Min(pestanas.Nombres.Length - 1, tab));
-                Acomodar(); RefrescarPantalla(); Invalidate(true);
+                Acomodar(); RefrescarPantalla(); RefrescarVigia(); Invalidate(true);
                 if (modo.Length > 0 && pestanas.Activa > 0 && pestanas.Activa - 1 < pantallas.Length)
                     pantallas[pestanas.Activa - 1].Modo(modo);
                 Application.DoEvents();
                 // bombear mensajes un rato: las vistas que cargan de fondo (historial, cruces) llegan tarde
                 var hasta = DateTime.Now.AddMilliseconds(Math.Max(0, Math.Min(30000, espera)));
                 while (DateTime.Now < hasta) { Application.DoEvents(); System.Threading.Thread.Sleep(40); }
-                if (espera > 0) { RefrescarPantalla(); Invalidate(true); Application.DoEvents(); }
+                if (espera > 0) { RefrescarPantalla(); RefrescarVigia(); Invalidate(true); Application.DoEvents(); }
                 using (var bmp = new Bitmap(Math.Max(1, Width), Math.Max(1, Height)))
                 {
                     DrawToBitmap(bmp, new Rectangle(0, 0, Width, Height));

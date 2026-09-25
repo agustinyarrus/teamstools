@@ -87,19 +87,31 @@ Y afuera de las pestañas: el **overlay** de cuenta regresiva abajo a la derecha
 
 Ventana sin marco, negro puro (`#08090c`), Cascadia Code en pesos finos y acentos pastel. Todo dibujado a mano: tablas con columnas arrastrables, fichas, series temporales, mapas de calor, chips, editores con formato. El hilo de la interfaz **nunca espera a nada**: ni disco, ni procesos, ni Teams, ni red (más abajo se cuenta cómo).
 
+Cada pestaña va con su captura completa a **4K** (hacé clic para verla entera) y, debajo, **recortes a tamaño natural** de sus componentes.
+
 ### vigía
 
 La reunión en curso, arriba. Las seis tarjetas: Teams, reunión, otros en la sala, sala vacía hace, acción y presencia. Abajo a la izquierda la **línea de tiempo** (el log de la app, con colores por nivel), la **cronología de presencias** (la tuya desde el log nativo, la del equipo desde la lista de chats) y la serie de **inactividad**: un diente de sierra donde cada caída a cero es un toque de F15 antes de que Teams te marque Ausente. A la derecha, cuatro fichas: sistema, permanencia online, mensajería y ventanas de Teams.
 
-<img src="docs/vigia.png" alt="vigía sin llamada" width="100%">
+<img src="docs/vigia-en-reunion.png" alt="vigía durante una reunión (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-vigia-hero.png" alt="el hero del vigía"><br><sub>El hero: el estado en grande, la reunión, cuánto lleva y con quiénes; y las dos primeras tarjetas.</sub></p>
+
+<p align="center"><img src="docs/zoom-vigia-tarjetas.png" alt="tarjetas del vigía"><br><sub>Otros en la sala (con los nombres leídos de la galería), sala vacía hace y la acción que viene, con el método de salida.</sub></p>
+
+<p align="center"><img src="docs/zoom-vigia-cronologia.png" alt="cronología de presencias"><br><sub>La cronología de presencias: cada cambio del equipo con su hora, leído de la lista de chats sin abrir nada. Al arrancar, retoma los de hoy desde el disco.</sub></p>
+
+<p align="center"><img src="docs/zoom-vigia-permanencia.png" alt="ficha de permanencia online"><br><sub>La ficha de permanencia online: qué dice Teams que estás, desde cuándo, cómo lo sé, el método, el margen antes de Ausente y el histórico de toques, derivas y forzados.</sub></p>
+
+<p align="center"><img src="docs/zoom-vigia-inactividad.png" alt="serie de inactividad" width="100%"><br><sub>La inactividad, segundo a segundo: sube hasta el umbral («toco acá») y cae a cero con cada tecla fantasma. La línea de arriba es donde Teams te marcaría Ausente.</sub></p>
 
 Cuando la sala se vacía, el hero cambia al anillo de cuenta regresiva y el overlay aparece abajo a la derecha, sin robar el foco, con tres botones: **Salir ahora**, **Quedarme N min** y **No salir esta vez**.
 
-<img src="docs/vigia-sala-vacia.png" alt="vigía con la sala vacía" width="100%">
+<img src="docs/vigia-sala-vacia.png" alt="vigía con la sala vacía (4K)" width="100%">
 
-<p align="center"><img src="docs/overlay-cuenta-regresiva.png" alt="el overlay de cuenta regresiva" width="46%"> <img src="docs/overlay-saliendo.png" alt="el overlay saliendo" width="46%"></p>
+<p align="center"><img src="docs/overlay-cuenta-regresiva.png" alt="el overlay de cuenta regresiva"> &nbsp; <img src="docs/overlay-saliendo.png" alt="el overlay saliendo"><br><sub>El overlay: siempre visible, nunca activo. A la izquierda la cuenta regresiva; a la derecha, saliendo.</sub></p>
 
-Los chips de abajo cambian los ajustes en vivo (clic = siguiente valor, clic derecho = anterior) y se guardan en `config.json`: gracia, lectura cada, quedarme, si nadie llega, simulación, siempre Disponible, horario laboral, sonido, avisos, cuenta regresiva, verificar con Gente, inicio con Windows, arrancar en bandeja; y las acciones pausar, leer ahora, salir de la reunión (con confirmación), volcar el árbol UIA y abrir la carpeta de datos.
+<p align="center"><img src="docs/zoom-vigia-chips.png" alt="los chips de ajustes" width="100%"><br><sub>Los chips de abajo cambian los ajustes en vivo (clic = siguiente valor, clic derecho = anterior) y se guardan en <code>config.json</code>.</sub></p>
 
 ### la bandeja
 
@@ -107,93 +119,175 @@ El ícono se dibuja en vivo, 32 × 32, y cuenta el estado sin abrir nada: un col
 
 <img src="docs/bandeja-hoja.png" alt="todos los estados del ícono de la bandeja" width="100%">
 
-<p align="center"><img src="docs/bandeja.gif" alt="el anillo llenándose" width="120"></p>
+<p align="center"><img src="docs/bandeja.gif" alt="el anillo llenándose" width="120"><br><sub>El anillo, llenándose mientras se transcribe una reunión.</sub></p>
 
 El menú del ícono: mostrar el panel, modo automático, mantenerme Disponible, pausar la vigilancia, modo simulación, salir de la reunión ahora, volcar el árbol UIA, abrir la carpeta de datos, cerrar. Los globos avisan lo justo: «La sala se vació», «Salí de la reunión», «Le contesté a …», «Recordatorio enviado a …», «Transcripción lista» (tocá el globo y abre esa grabación).
 
 ### mensajes · el autocontestador
 
-Reglas ordenadas: gana la primera que coincide. Cada regla tiene su patrón (regex o texto suelto), a quién aplica, si contesta en grupos, enfriamiento, espera antes de contestar (para no parecer un robot), tope por día, franja horaria y días, **señales que exige o bloquea** (los micromodelos: `+urgencia +ticket −bot`), y una respuesta con formato de una o varias burbujas, con imágenes, o **redactada por el modelo local** con la instrucción que le des. El **probador** dice, para un mensaje que escribas, qué regla contestaría, qué diría exactamente y por qué las otras quedaron afuera. La bandeja guarda cada mensaje que entró con la regla que lo atendió, lo que se contestó y en cuántos milisegundos.
+Reglas ordenadas: gana la primera que coincide. Cada regla tiene su patrón (regex o texto suelto), a quién aplica, si contesta en grupos, enfriamiento, espera antes de contestar (para no parecer un robot), tope por día, franja horaria y días, **señales que exige o bloquea** (los micromodelos: `+urgencia +ticket −bot`), y una respuesta con formato de una o varias burbujas, con imágenes, o **redactada por el modelo local** con la instrucción que le des.
 
-<img src="docs/mensajes.png" alt="mensajes" width="100%">
+<img src="docs/mensajes.png" alt="mensajes (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-mensajes-reglas.png" alt="la tabla de reglas" width="100%"><br><sub>Las reglas: patrón, condiciones extra (señales, horario), a quién responden, espera, enfriamiento, tope, tipo de envío, usos, fallos y milisegundos.</sub></p>
+
+<p align="center"><img src="docs/zoom-mensajes-probador.png" alt="el probador" width="100%"><br><sub>El probador: escribís un mensaje como si te llegara y dice qué regla contestaría, exactamente qué diría, por qué las otras quedaron afuera y qué señales vieron los micromodelos (prioridad 75/100: urgencia, ticket, producción, pregunta…).</sub></p>
+
+<p align="center"><img src="docs/zoom-mensajes-bandeja.png" alt="la bandeja" width="100%"><br><sub>La bandeja: cada mensaje que entró, la regla que lo atendió, lo que se contestó y en cuántos milisegundos; y los que no se contestaron, con el motivo.</sub></p>
 
 ### cron · recordatorios
 
-«mañana 10:00», «en 45 min», «lunes 9:30», «cada laborable 9:15», «cada lun,mie 10:00», «cada 3 días 14:00», «el 1 de cada mes 09:30», «el último viernes 17:00», «17/10 15:00». El parser entiende todo eso y muestra, antes de guardar, **cuándo caería** cada uno de los próximos disparos. El calendario de la semana pone cada recordatorio en su hora; la tabla de historial cuenta qué salió y qué falló (con reintento a los 5 minutos, tres veces).
+«mañana 10:00», «en 45 min», «lunes 9:30», «cada laborable 9:15», «cada lun,mie 10:00», «cada 3 días 14:00», «el 1 de cada mes 09:30», «el último viernes 17:00», «17/10 15:00». El parser entiende todo eso y muestra, antes de guardar, **cuándo caería** cada uno de los próximos disparos.
 
-<img src="docs/cron.png" alt="cron" width="100%">
+<img src="docs/cron.png" alt="cron (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-cron-semana.png" alt="la semana" width="100%"><br><sub>La semana: cada recordatorio en su hora, con el día de hoy primero; crema = para mí, cielo = recurrente, malva = una vez.</sub></p>
+
+<p align="center"><img src="docs/zoom-cron-recordatorios.png" alt="la tabla de recordatorios" width="100%"><br><sub>Los recordatorios: a quién, qué dice, cómo lo escribiste, cómo repite, cuándo cae, envíos, fallos y qué porcentaje salió bien.</sub></p>
+
+<p align="center"><img src="docs/zoom-cron-editor.png" alt="el editor de un recordatorio" width="100%"><br><sub>El editor: destinatario con sugerencias de la agenda, el «cuándo» en lenguaje natural con su lectura, la repetición (una vez, diario, lun-vie, semanal, cada N, del mes, último), «para mí» y la vista de cuándo caería.</sub></p>
 
 ### personalizados · mensajes de un clic y la agenda
 
 Mensajes tuyos guardados con etiqueta, formato y destinatario sugerido, con la **vista previa** de cómo le llega al otro. Abajo, el equipo como lo ve la lista de chats de Teams: presencia en vivo, cuánto hace, cuántos cambios, cuánto estuvo Disponible; y los movimientos: quién se conectó y se desconectó.
 
-<img src="docs/personalizados.png" alt="personalizados" width="100%">
+<img src="docs/personalizados.png" alt="personalizados (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-personalizados-mensajes.png" alt="mis mensajes" width="100%"><br><sub>Mis mensajes: nombre, etiqueta, para quién, qué dice, caracteres, si lleva formato, usos y último uso.</sub></p>
+
+<p align="center"><img src="docs/zoom-personalizados-presencia.png" alt="presencia del equipo y curiosidades"><br><sub>La presencia del equipo ahora y las curiosidades del día: quién se conectó primero, quién estuvo más disponible, quién se mueve más.</sub></p>
+
+<p align="center"><img src="docs/zoom-personalizados-equipo.png" alt="el equipo en vivo" width="100%"><br><sub>El equipo leído de Teams: estado ahora, hace cuánto, cambios, tiempo disponible, correo y rol. Doble clic pone «para».</sub></p>
 
 ### perfil · el guión de presencia
 
 Una lista de tramos que se repite en bucle («Disponible 90 min ± 20 %, Ausente 6 min ± 50 %, Disponible 75, Ocupado 30…») para que tu estado parezca de una persona y no de un proceso. Plantillas *más real*, *jornada*, *foco* y *siempre online*. Respeta el horario laboral, lo que pongas a mano, y puede desconectarte al salir del horario. El estado se fija desde el menú del avatar de Teams **sin abrir ninguna ventana**.
 
-<img src="docs/perfil.png" alt="perfil" width="100%">
+<img src="docs/perfil.png" alt="perfil (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-perfil-guion.png" alt="el guión" width="100%"><br><sub>El guión: poner un estado ahora sin abrir Teams, y los tramos con su duración, variación, rango real y parte del ciclo.</sub></p>
+
+<p align="center"><img src="docs/zoom-perfil-ajustes.png" alt="los interruptores de presencia" width="100%"><br><sub>Los interruptores: guión, horario, respetar lo manual, desconectarse al salir, la tecla fantasma, el rescate desde el menú y no dejar que se apague la pantalla.</sub></p>
 
 ### ia · micromodelos sobre tus conversaciones
 
 Ocho lectores de avisos y tres de notas, todos **locales y deterministas** (búsquedas y reglas, sin modelo): *te deben respuesta*, *te esperan*, *vencimientos*, *producción*, *te nombraron*, *tickets*, *tema caliente*, *conversación fría*; y la libreta: *me comprometí*, *me prometieron*, *se decidió*. Corren sobre los últimos N días en cientos de milisegundos. El modelo local sólo entra si le pedís un resumen.
 
-<img src="docs/ia.png" alt="ia" width="100%">
+<img src="docs/ia.png" alt="ia (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-ia-avisos.png" alt="lo que deberías mirar" width="100%"><br><sub>Lo que deberías mirar: prioridad, qué micromodelo lo vio, cuándo, dónde, quién, qué dice y por qué te lo muestra.</sub></p>
+
+<p align="center"><img src="docs/zoom-ia-micromodelos.png" alt="los micromodelos"><br><sub>Cada micromodelo, qué busca, cuánto encontró y cuánto tardó (todos juntos, decenas de milisegundos).</sub></p>
+
+<p align="center"><img src="docs/zoom-ia-libreta.png" alt="la libreta" width="100%"><br><sub>La libreta: lo que te comprometiste, lo que te prometieron y lo que se decidió, con quién, dónde y cuándo vence.</sub></p>
 
 ### llamadas · el grabador
 
 La banda en vivo mientras se graba: el punto que late, el reloj, dos cintas que corren (**llamada** en cian, **tu mic** en malva) con «entrando», el nivel en dB con su pico, por dónde suena y por dónde entra («suena por JBL TUNE FLEX (recién conectado)»), «silenciado en Teams · lo que digas ahora no se graba», y la salud de loopcap con los MB y el disco libre. Abajo, la lista de reuniones grabadas con su estado (grabando, en cola, archivando 40 %, transcribiendo, lista, falló), el **recorrido** paso a paso de la elegida con su bitácora, el resumen y el visor de la transcripción.
 
-<img src="docs/llamadas.png" alt="llamadas" width="100%">
+<img src="docs/llamadas.png" alt="llamadas (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-llamadas-ahora.png" alt="las tarjetas del grabador" width="100%"><br><sub>Ahora, en cola, y la banda de lo que se está procesando (acá: transcribiendo al 45 %).</sub></p>
+
+<p align="center"><img src="docs/zoom-llamadas-ajustes.png" alt="los ajustes del grabador" width="100%"><br><sub>Los ajustes: grabar, borrar los WAV al archivar (el .opus queda siempre), resumir, sólo con gente, pausar en llamadas, separar quién habla, el motor y el descarte de lo más corto.</sub></p>
+
+<p align="center"><img src="docs/zoom-llamadas-reuniones.png" alt="reuniones grabadas" width="100%"><br><sub>Las reuniones grabadas: cuándo, cuánto duró, en qué estado está (en cola, lista, transcribiendo 45 %, falló), palabras, qué audio queda y el detalle.</sub></p>
+
+<p align="center"><img src="docs/zoom-llamadas-recorrido.png" alt="recorrido y resumen" width="100%"><br><sub>El recorrido de la elegida (grabación → .opus → texto → resumen → lista) con la bitácora hora por hora, y el resumen que armó el modelo local.</sub></p>
+
+<p align="center"><img src="docs/zoom-llamadas-transcripcion.png" alt="la transcripción compacta" width="100%"><br><sub>La transcripción en su lugar de la pestaña: cinta, leyenda de voces y los turnos con su hora.</sub></p>
 
 <img src="docs/banda-hablando.png" alt="la banda en vivo" width="100%">
 
-El **REC** de la barra de título se ve desde cualquier pestaña, con dos vúmetros finitos; un clic lleva a la pestaña.
+<p align="center"><sub>La banda en vivo mientras se graba (dibujada con un pulso sintético): las dos cintas que corren, el nivel con su pico, por dónde suena y la salud de loopcap.</sub></p>
 
-<p align="center"><img src="docs/rec.png" alt="REC"> &nbsp; <img src="docs/rec-mic-silenciado.png" alt="REC con el mic silenciado"></p>
+<p align="center"><img src="docs/rec.png" alt="REC"> &nbsp; <img src="docs/rec-mic-silenciado.png" alt="REC con el mic silenciado"><br><sub>El REC de la barra de título se ve desde cualquier pestaña, con dos vúmetros finitos; a la derecha, con el micrófono silenciado en Teams.</sub></p>
 
 ### la transcripción, en grande
 
-Cada voz con su color, la **cinta** con un carril por voz y el eje de tiempo, la columna «quién habló» con porcentaje, minutos y turnos, y el **karaoke**: el turno que suena se enciende, lo dicho se ilumina al ritmo del audio y la vista lo sigue sola. Con el detective de nombres, al lado de «Persona 1» aparece «¿Valentina Rivas? · 72 %» y su porqué.
+Cada voz con su color, la **cinta** con un carril por voz y el eje de tiempo, la columna «quién habló» con porcentaje, minutos y turnos, y el **karaoke**: el turno que suena se enciende, lo dicho se ilumina al ritmo del audio y la vista lo sigue sola.
 
-<img src="docs/llamadas-visor.png" alt="el visor de la transcripción en grande, con karaoke" width="100%">
+<img src="docs/llamadas-visor.png" alt="el visor de la transcripción en grande (4K)" width="100%">
 
-Buscar es escribir: sin tildes ni mayúsculas, la ñ importa; las apariciones se marcan en el texto, en la cinta y en la barra.
+<p align="center"><img src="docs/zoom-visor-cinta.png" alt="la cinta" width="100%"><br><sub>La cinta: un carril por voz, el eje de tiempo, el recuadro de lo que se ve y el cabezal del audio. Clic o arrastre = ir ahí.</sub></p>
 
-<img src="docs/llamadas-buscar.png" alt="búsqueda en la transcripción" width="100%">
+<p align="center"><img src="docs/zoom-visor-turnos.png" alt="los turnos con karaoke" width="100%"><br><sub>Los turnos: hora (clic = escuchar desde ahí), avatar y nombre con el color de la voz, y el karaoke iluminando lo que ya sonó.</sub></p>
+
+<p align="center"><img src="docs/zoom-visor-voces.png" alt="quién habló"><br><sub>Quién habló: porcentaje, minutos, turnos y palabras por voz, la barra relativa a la que más habló, y las sugerencias del detective con su porqué.</sub></p>
+
+<p align="center"><img src="docs/zoom-visor-buscar.png" alt="búsqueda" width="100%"><br><sub>Buscar es escribir: sin tildes ni mayúsculas, la ñ importa; las apariciones se marcan en el texto, en la cinta y en la barra.</sub></p>
+
+<p align="center"><img src="docs/transcripcion-compacto-buscar.png" alt="el visor compacto con una búsqueda"><br><sub>El visor compacto, con una búsqueda: la misma conversación en el rincón de la pestaña.</sub></p>
 
 ### patrones · lo raro y quién está con quién
 
 Hallazgos con peso: parpadeo (4 cambios en 10 minutos), tramos de 6 horas sin moverse, actividad de madrugada, días con el doble de cambios que tu mediana, exceso de Ausente, tu hora más inestable; y del equipo: el primero en llegar, el último en irse, el más inquieto, quien no dio señales, el «relojito» que se desconecta siempre a la misma hora. La tabla **quién está en call con quién** cruza tres fuentes (más abajo se explica) y dice cómo lo sabe.
 
-<img src="docs/patrones.png" alt="patrones" width="100%">
+<img src="docs/patrones.png" alt="patrones (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-patrones-hallazgos.png" alt="lo que encontré" width="100%"><br><sub>Lo que encontré: qué, quién, el detalle con los números y cuándo. Debajo, en la captura completa, a qué hora del día se te mueve el estado.</sub></p>
+
+<p align="center"><img src="docs/zoom-patrones-corrillos.png" alt="quién está en call con quién" width="100%"><br><sub>Quién está en call con quién: cuándo, cuánto duró, quiénes, cuántos, quién llegó tarde y cómo lo sé (la llamada del historial, el roster de Teams o deducido de la presencia), con la insignia «con vos».</sub></p>
+
+<p align="center"><img src="docs/zoom-patrones-fichas.png" alt="mi presencia en números y las llamadas del equipo" width="100%"><br><sub>Mi presencia en números (cambios, rachas, reparto de hoy, historia) y las llamadas del equipo (cuántas, cuánto duran, la más larga, la más concurrida, a qué hora se juntan).</sub></p>
+
+<p align="center"><img src="docs/zoom-patrones-parejas.png" alt="quiénes se juntan más seguido" width="100%"><br><sub>Las parejas que más coinciden en llamadas, contadas sobre las sesiones vistas.</sub></p>
 
 ### equipo · cuatro lentes
 
 **ahora** (la lista de chats en vivo), **historia** (lo que se escribieron en privado desde siempre: quién habla más, días juntos, silencio, la pelota), **esperas** (medianas de cuánto te hacen esperar y cuánto los hacés esperar vos, quién arranca) y **ritmo** (hora pico, su franja horaria en un sparkline de 24 horas, mensajes por día, palabras por mensaje).
 
-<img src="docs/equipo.png" alt="equipo · ahora" width="100%">
-<img src="docs/equipo-esperas.png" alt="equipo · esperas" width="100%">
-<img src="docs/equipo-ritmo.png" alt="equipo · ritmo" width="100%">
+<img src="docs/equipo.png" alt="equipo · ahora (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-equipo-ahora.png" alt="la lente ahora" width="100%"><br><sub>La lente «ahora»: estado, hace cuánto, cambios, minutos en cada estado, % disponible, sin leer, primera vez y última vez.</sub></p>
+
+<p align="center"><img src="docs/zoom-equipo-persona.png" alt="la ficha de una persona"><br><sub>La ficha de la persona elegida: ahora, en privado entre ustedes dos, además en canales y grupos, quién espera a quién, la pelota y lo último que dijo.</sub></p>
+
+<img src="docs/equipo-historia.png" alt="equipo · historia (4K)" width="100%">
+
+<p align="center"><sub>La lente «historia»: lo que se escribieron en privado desde siempre, quién habla más, días juntos, silencio y la pelota (a quién le debés respuesta).</sub></p>
+
+<img src="docs/equipo-esperas.png" alt="equipo · esperas (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-equipo-esperas.png" alt="la lente esperas" width="100%"><br><sub>La lente «esperas»: cuánto espera él, cuánto esperás vos, la balanza, la reacción de cada lado, los turnos y quién arranca. Medianas, no promedios.</sub></p>
+
+<p align="center"><img src="docs/zoom-equipo-esperas-ranking.png" alt="quién te hace esperar más"><br><sub>El ranking de la lente: quién te hace esperar más.</sub></p>
+
+<img src="docs/equipo-ritmo.png" alt="equipo · ritmo (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-equipo-ritmo.png" alt="la lente ritmo" width="100%"><br><sub>La lente «ritmo»: hora pico, la franja horaria de cada uno en un sparkline de 24 horas, días activo, mensajes por día, palabras por mensaje, primero, último y silencio.</sub></p>
 
 ### día · tu presencia hora por hora
 
 Una banda por día, 24 celdas, el color del estado dominante de esa hora y el porcentaje de Disponible al costado. Los tramos de hoy y los cambios por día.
 
-<img src="docs/dia.png" alt="día" width="100%">
+<img src="docs/dia.png" alt="día (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-dia-mapa.png" alt="el mapa de calor" width="100%"><br><sub>El mapa: cada fila un día, cada celda una hora (verde Disponible, gris Ausente, durazno en una llamada, vacío desconectado), y el % del día a la derecha.</sub></p>
+
+<p align="center"><img src="docs/zoom-dia-tramos.png" alt="los tramos de hoy" width="100%"><br><sub>Los tramos de hoy: desde, hasta, estado, duración y parte del día.</sub></p>
+
+<p align="center"><img src="docs/zoom-dia-comparados.png" alt="días comparados" width="100%"><br><sub>Días comparados: cuántos cambios de estado tuvo cada día.</sub></p>
 
 ### salud · diez chequeos con evidencia
 
 Cada chequeo dice qué miró, si está bien, la evidencia y cuánto tardó: Teams corriendo, el log nativo, el avatar por UIA, el reloj de inactividad, la sesión, el disco, la coherencia entre el log y el avatar, la permanencia online, los micromodelos y el modelo local (que es opcional a propósito).
 
-<img src="docs/salud.png" alt="salud" width="100%">
+<img src="docs/salud.png" alt="salud (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-salud-chequeos.png" alt="los chequeos" width="100%"><br><sub>Los chequeos: qué miro, el resultado (bien, ojo, mal), la evidencia concreta y los milisegundos.</sub></p>
+
+<p align="center"><img src="docs/zoom-salud-entorno.png" alt="el entorno" width="100%"><br><sub>El entorno: Teams, la ventana de chat, la presencia medida (fuente, frescura, estado, toques, derivas, forzados) y el log nativo.</sub></p>
 
 ### historia · buscar en todo lo que escribiste
 
 Varias palabras (todas tienen que estar), por conversación, por autor, por rango, sólo los tuyos, con o sin altas y llamadas. Cada resultado trae las señales de los micromodelos y su prioridad; el elegido las explica una por una.
 
-<img src="docs/historia.png" alt="historia" width="100%">
+<img src="docs/historia.png" alt="historia (4K)" width="100%">
+
+<p align="center"><img src="docs/zoom-historia-resultados.png" alt="los resultados" width="100%"><br><sub>Los resultados: fecha, conversación, autor («yo» en cian), el mensaje, las señales y la prioridad.</sub></p>
+
+<p align="center"><img src="docs/zoom-historia-corpus.png" alt="el corpus" width="100%"><br><sub>El corpus: cuántos mensajes, con texto, míos y de otros, conversaciones, personas, desde, hasta, por año; y dónde se habla más.</sub></p>
 
 ---
 

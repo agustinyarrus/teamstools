@@ -65,6 +65,7 @@ namespace TeamsTools
         public string Etiqueta = "MENSAJE";
         public event EventHandler Cambio;
         bool cargando;
+        bool hayLugarParaEstado = true;
 
         public EditorRico()
         {
@@ -193,7 +194,11 @@ namespace TeamsTools
                 x += c.Width + gap; filaH = c.Height;
             }
             int top = y + filaH + Dpi.S(esc, 8);
-            Caja.SetBounds(Dpi.S(esc, 12), top, Width - Dpi.S(esc, 24), Math.Max(Dpi.S(esc, 40), Height - top - Dpi.S(esc, 28)));
+            int altoCaja = Math.Max(Dpi.S(esc, 40), Height - top - Dpi.S(esc, 28));
+            Caja.SetBounds(Dpi.S(esc, 12), top, Width - Dpi.S(esc, 24), altoCaja);
+            // 🚨 cuando el layout de arriba lo deja corto, la caja se queda con su mínimo y la línea de estado
+            //    («81 caracteres · 1 línea») quedaba DEBAJO del texto, encimada: si no hay lugar, no se dibuja.
+            hayLugarParaEstado = top + altoCaja <= Height - Dpi.S(esc, 24);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -208,7 +213,8 @@ namespace TeamsTools
             int lineas = t.Length == 0 ? 0 : t.Split('\n').Length;
             var rico = t.Length > 0 ? Rico : null;
             string estado = t.Length == 0 ? "vacío · escribí con formato o pegá texto" : $"{t.Length} caracteres · {lineas} línea/s" + (rico != null && rico.TieneFormato ? " · con formato" : " · texto plano");
-            Tema.Texto_(g, estado, Tema.Fina(8.5f), Tema.Apagado, new Rectangle(Dpi.S(esc, 12), Height - Dpi.S(esc, 22), Width - Dpi.S(esc, 24), Dpi.S(esc, 16)));
+            if (hayLugarParaEstado)
+                Tema.Texto_(g, estado, Tema.Fina(8.5f), Tema.Apagado, new Rectangle(Dpi.S(esc, 12), Height - Dpi.S(esc, 22), Width - Dpi.S(esc, 24), Dpi.S(esc, 16)));
         }
     }
 

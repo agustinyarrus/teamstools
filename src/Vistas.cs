@@ -56,6 +56,41 @@ namespace TeamsTools
             }
             return y + filaH;
         }
+
+        /// <summary>
+        /// Reparte un alto entre paneles apilados según lo que cada uno PIDE (su alto preferido), no por porcentajes
+        /// fijos. Si todo entra, lo que sobra va al panel «elástico»; si no entra, cada uno cede en proporción a su
+        /// holgura (preferido − mínimo), así ninguno se lleva todo el recorte. O(n) sobre la cantidad de paneles.
+        /// </summary>
+        protected static int[] RepartoVertical(int total, int[] preferidos, int[] minimos, int elastico)
+        {
+            int n = preferidos.Length;
+            var r = new int[n];
+            int suma = 0, holgura = 0;
+            for (int i = 0; i < n; i++) { r[i] = Math.Max(minimos[i], preferidos[i]); suma += r[i]; holgura += r[i] - minimos[i]; }
+            if (suma <= total) { r[elastico] += total - suma; return r; }
+            int deficit = suma - total;
+            if (holgura <= 0 || suma - holgura > total)
+            {
+                // 🚨 ni con todos en su mínimo entra: antes el último panel se iba de la pantalla. Ahora todos se
+                //    achican en proporción a su mínimo, y cada uno muestra menos filas o menos barras, pero se ve.
+                int sumaMin = 0; for (int i = 0; i < n; i++) sumaMin += minimos[i];
+                if (sumaMin <= 0) return r;
+                int dado = 0;
+                for (int i = 0; i < n; i++) { r[i] = Math.Max(1, (int)((long)total * minimos[i] / sumaMin)); dado += r[i]; }
+                r[elastico] += total - dado;
+                return r;
+            }
+            int cedido = 0;
+            for (int i = 0; i < n; i++)
+            {
+                int quita = Math.Min(r[i] - minimos[i], (int)Math.Round(deficit * (double)(r[i] - minimos[i]) / holgura));
+                r[i] -= quita; cedido += quita;
+            }
+            // el redondeo puede dejar un par de píxeles sin ceder: los pone el primero que todavía tenga holgura
+            for (int i = 0; i < n && cedido < deficit; i++) { int extra = Math.Min(r[i] - minimos[i], deficit - cedido); r[i] -= extra; cedido += extra; }
+            return r;
+        }
         /// <summary>
         /// Cuelga el guión flotante de un compositor: el botón «desplegar» lo abre sobre TODA la pantalla, y lo que se
         /// reordene, borre o agregue ahí vuelve al compositor porque los dos comparten la MISMA lista de partes.
@@ -511,7 +546,11 @@ namespace TeamsTools
             int alto = Height - y - S(4);
 
             // --- arriba, a lo ancho: la TABLA de reglas con todo el detalle + su botonera
-            int altoTabla = Math.Max(S(140), (int)(alto * 0.34));
+            // 🚨 un 34 % fijo dejaba la tabla con cuatro reglas y medio panel vacío mientras abajo el compositor
+            //    quedaba tan corto que el editor pisaba su propia línea de estado: la tabla pide sus filas (piso de
+            //    cuatro, techo del 45 %) y todo lo demás baja al editor y a la bandeja.
+            int pideTabla = S(46) + Math.Max(4, tReglas.Filas.Count) * S(tReglas.AltoFila) + S(16) + botH;
+            int altoTabla = Math.Max(S(140), Math.Min((int)(alto * 0.45), pideTabla));
             int yBotTabla = y + altoTabla - botH;
             tReglas.SetBounds(pad, y, w, yBotTabla - y - S(8));
             Flujo(new[] { chNueva, chDuplicar, chSubir, chBajar, chBorrar, chActivarTodo }, pad, yBotTabla, w);
@@ -798,17 +837,24 @@ namespace TeamsTools
             int pad = S(4), w = Width - pad * 2, botH = S(34);
             rTarjetas = new Rectangle(pad, S(4), w, S(84));
             // --- la semana, a lo ancho: el calendario con los recordatorios ubicados por hora
-            // 🚨 el calendario CRECE cuando hay pocos recordatorios. Al revés quedaba un hueco muerto abajo
-            //    (tabla vacía + historial vacío) mientras la semana, que siempre tiene algo que mostrar, iba apretada.
+            // 🚨 el calendario CRECE con lo que SOBRA, no con la cantidad de recordatorios: la lista pide sus filas,
+            //    la columna del editor pide lo suyo, y todo lo que queda va a la semana (hasta un tope). En una ventana
+            //    grande los recordatorios cercanos dejan de pisarse y no queda un hueco muerto abajo; en una chica el
+            //    calendario vuelve a su alto base y nadie se queda sin lugar.
             int nRec = ctx.Recordatorios.Lista.Count;
-            int extraSemana = nRec == 0 ? S(100) : nRec <= 3 ? S(70) : 0;
-            rSemana = new Rectangle(pad, rTarjetas.Bottom + S(8), w, S(118) + extraSemana);
-
-            int y = rSemana.Bottom + S(8);
-            int alto = Height - y - S(4);
             // el historial solo ocupa lugar si hay algo que mostrar: con la agenda recién creada sobraba
             // un bloque vacío abajo mientras el calendario quedaba apretado arriba.
             bool hayHistorial = ctx.Recordatorios.Lista.Any(r => r.Historial.Count > 0);
+            int yTop = rTarjetas.Bottom + S(8);
+            int pideLista = S(46) + Math.Max(4, nRec) * S(lista.AltoFila) + S(16) + botH;
+            int pideEditor = S(400);        // para + sugerencias + cuándo + lectura + palancas + próximos + editor de 80 + botonera
+            int pideHistorial = hayHistorial ? S(96) + S(10) : 0;
+            int sobra = Height - yTop - S(4) - S(118) - S(8) - Math.Max(pideLista, pideEditor) - pideHistorial;
+            int extraSemana = Math.Max(0, Math.Min(S(150), sobra));
+            rSemana = new Rectangle(pad, yTop, w, S(118) + extraSemana);
+
+            int y = rSemana.Bottom + S(8);
+            int alto = Height - y - S(4);
             tHistorial.Visible = hayHistorial;
             int altoHist = hayHistorial ? Math.Max(S(96), (int)(alto * 0.26)) : 0;
             int altoMedio = alto - altoHist - (hayHistorial ? S(10) : 0);
@@ -895,18 +941,27 @@ namespace TeamsTools
                     foreach (var t in rec.Proximas(12))
                         if (t.Date == dia) delDia.Add(Tuple.Create(t, rec));
 
+                // 🚨 dos recordatorios a menos de un par de horas caían en el mismo lugar y se leían encimados: cada
+                //    caja baja hasta quedar debajo de la anterior (apilado en orden de hora, O(n) por día). Lo que ya
+                //    no entra en la columna se resume en un «+N» al pie en vez de dibujarse encima de otra caja.
+                int yLibre = top, sinLugar = 0;
                 foreach (var it in delDia.OrderBy(x => x.Item1))
                 {
                     double hh = Math.Max(h0, Math.Min(h1, it.Item1.Hour + it.Item1.Minute / 60.0));
                     int y = top + (int)((bot - top) * (hh - h0) / (h1 - h0));
                     var col = it.Item2.ParaMi ? Tema.Crema : it.Item2.EsRecurrente ? Tema.Cielo : Tema.Malva;
-                    var caja = new Rectangle(xd + S(1), y - S(6), wDia - S(5), S(12));
+                    var caja = new Rectangle(xd + S(1), Math.Max(y - S(6), yLibre), wDia - S(5), S(12));
+                    if (caja.Bottom > bot + S(2)) { sinLugar++; continue; }
                     Tema.Tarjeta_(g, new RectangleF(caja.X + 0.5f, caja.Y + 0.5f, caja.Width - 1, caja.Height - 1), S(2), Tema.Mezcla(Tema.Panel, col, 0.20f), Tema.Alpha(col, 120));
                     using (var b = new SolidBrush(col)) g.FillRectangle(b, caja.X, caja.Y, S(2), caja.Height);
                     string et = it.Item1.ToString("HH:mm") + " " + (it.Item2.ParaMi ? "yo" : Corto2(it.Item2.Para));
                     Tema.Texto_(g, et, Tema.Fina(7.5f), Tema.Texto, new Rectangle(caja.X + S(5), caja.Y, caja.Width - S(6), caja.Height),
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                    yLibre = caja.Bottom + S(2);
                 }
+                if (sinLugar > 0 && yLibre <= bot - S(10))
+                    Tema.Texto_(g, "+" + sinLugar, Tema.Fina(7.5f), Tema.MuyApagado, new Rectangle(xd, Math.Max(yLibre, bot - S(12)), wDia - S(5), S(12)),
+                        TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
                 if (delDia.Count == 0 && !finde)
                     Tema.Texto_(g, "—", Tema.Fina(8f), Tema.MuyApagado, new Rectangle(xd, (top + bot) / 2 - S(7), wDia - S(4), S(14)), TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
@@ -1275,7 +1330,10 @@ namespace TeamsTools
             int y = rTarjetas.Bottom + S(10);
             int alto = Height - y - S(4);
             int hB = Math.Max(S(150), (int)(alto * 0.34));                       // tabla de mis mensajes
-            int hC = Math.Max(S(210), (int)(alto * 0.38));                       // editor + vista previa + curiosidades
+            // 🚨 la banda del medio pide lo que necesita su columna derecha (el gráfico entero y la ficha de curiosidades
+            //    apretada), entre el 38 % de antes y un techo del 45 %: con el 38 % fijo la ficha perdía filas al pie.
+            int pideC = gPresencia.AltoPreferido() + S(12) + fCuriosidades.AltoMinimo() + S(4);
+            int hC = Math.Max(S(210), Math.Min((int)(alto * 0.45), Math.Max((int)(alto * 0.38), pideC)));   // editor + vista previa + curiosidades
             int hD = alto - hB - hC - S(20);                                     // contactos + movimientos + ficha
 
             // --- B: la tabla de mensajes, a lo ancho
@@ -1301,9 +1359,13 @@ namespace TeamsTools
             int hPrev = (int)((hC - S(12)) * 0.56);
             vistaPrevia.SetBounds(x2, yC, c2, hPrev);
             gChats.SetBounds(x2, yC + hPrev + S(12), c2, hC - hPrev - S(16));
-            int hG = (hC - S(12)) / 2;
-            gPresencia.SetBounds(x3, yC, c3, hG);
-            fCuriosidades.SetBounds(x3, yC + hG + S(12), c3, hC - hG - S(16));
+            // 🚨 mitad y mitad dejaba el gráfico (dos o tres barras) con medio panel vacío y la ficha de curiosidades
+            //    (dieciséis filas) apretada hasta pisarse: cada uno recibe lo que pide y, si no alcanza para los dos,
+            //    ceden en proporción a lo que pueden ceder.
+            var alturasC = RepartoVertical(hC - S(16), new[] { gPresencia.AltoPreferido(), fCuriosidades.AltoPreferido() },
+                new[] { gPresencia.AltoMinimo(), fCuriosidades.AltoMinimo() }, 1);
+            gPresencia.SetBounds(x3, yC, c3, alturasC[0]);
+            fCuriosidades.SetBounds(x3, yC + alturasC[0] + S(12), c3, alturasC[1]);
 
             // --- D: contactos | movimientos | ficha del contacto
             int yD = yC + hC + S(10);

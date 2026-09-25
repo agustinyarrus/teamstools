@@ -165,18 +165,26 @@ namespace TeamsTools
             int anchoIzq = Width - pad * 2 - anchoDer - S(12);
             int alto = Math.Max(S(120), Height - y - S(10));
 
-            // izquierda: los hallazgos arriba, las llamadas del equipo abajo (antes ese hueco quedaba vacío)
-            int altoHall = (int)(alto * 0.50);
+            // izquierda: los hallazgos (con lo que piden sus filas), a qué hora se te mueve el estado, y quién estuvo
+            // en call con quién con todo lo que sobra. 🚨 el 50/50 fijo dejaba media tabla de hallazgos vacía mientras
+            // la columna derecha, con cuarenta filas de fichas, no daba abasto: el gráfico de horas vive ahora acá.
+            int pideHall = S(46) + Math.Max(4, tHallazgos.Filas.Count) * S(tHallazgos.AltoFila) + S(16);
+            int altoHall = Math.Max(S(120), Math.Min((int)(alto * 0.40), pideHall));
+            int altoHoras = Math.Max(S(70), Math.Min((int)(alto * 0.30), gHoras.AltoPreferido()));
             tHallazgos.SetBounds(pad, y, anchoIzq, altoHall);
-            tCorrillos.SetBounds(pad, y + altoHall + S(12), anchoIzq, alto - altoHall - S(12));
+            gHoras.SetBounds(pad, y + altoHall + S(12), anchoIzq, altoHoras);
+            tCorrillos.SetBounds(pad, y + altoHall + altoHoras + S(24), anchoIzq, Math.Max(S(120), alto - altoHall - altoHoras - S(24)));
 
-            // derecha: cuatro fichas apiladas en vez de dos
+            // derecha: tres paneles apilados, cada uno con lo que pide
+            // 🚨 con porcentajes fijos (36/28/18 %) la ficha de llamadas, que tiene veinte filas, quedaba en un 28 % y
+            //    las líneas se pisaban: el alto sale de las filas, y si no entra todo ceden en proporción a su holgura.
             int xd = pad + anchoIzq + S(12), yd = y;
-            int hRes = (int)(alto * 0.36), hLla = (int)(alto * 0.28), hPar = (int)(alto * 0.18);
-            fResumen.SetBounds(xd, yd, anchoDer, hRes); yd += hRes + S(10);
-            fLlamadas.SetBounds(xd, yd, anchoDer, hLla); yd += hLla + S(10);
-            gParejas.SetBounds(xd, yd, anchoDer, hPar); yd += hPar + S(10);
-            gHoras.SetBounds(xd, yd, anchoDer, Math.Max(S(70), y + alto - yd));
+            var alturas = RepartoVertical(alto - S(20),
+                new[] { fResumen.AltoPreferido(), fLlamadas.AltoPreferido(), gParejas.AltoPreferido() },
+                new[] { fResumen.AltoMinimo(), fLlamadas.AltoMinimo(), gParejas.AltoMinimo() }, 1);
+            fResumen.SetBounds(xd, yd, anchoDer, alturas[0]); yd += alturas[0] + S(10);
+            fLlamadas.SetBounds(xd, yd, anchoDer, alturas[1]); yd += alturas[1] + S(10);
+            gParejas.SetBounds(xd, yd, anchoDer, alturas[2]);
         }
 
         /// <summary>
@@ -288,6 +296,7 @@ namespace TeamsTools
                     Etiqueta = VistaEquipo.Apellido(t.Item1) + " + " + VistaEquipo.Apellido(t.Item2),
                     Valor = t.Item3, Color = Tema.Rosa, Extra = t.Item3 + "×",
                 }).ToList(), co.Sesiones + " sesiones");
+            Acomodar();      // los altos de la columna derecha salen de las filas: con datos nuevos hay que repartir de nuevo
         }
 
         static double Mediana(List<double> xs)
@@ -362,6 +371,7 @@ namespace TeamsTools
                 if (motor.CambiosPorHora[h] > 0)
                     barras.Add(new Barra { Etiqueta = h.ToString("00") + " h", Valor = (int)motor.CambiosPorHora[h], Color = h < 7 || h > 21 ? Tema.Malva : Tema.Cielo });
             gHoras.Poner(barras.OrderByDescending(b => b.Valor).Take(12).ToList(), $"{motor.CambiosPorHora.Sum():0} cambios en total");
+            Acomodar();      // ídem: la ficha de presencia y el gráfico de horas acaban de cambiar de tamaño
 
             ultimo = DateTime.Now.ToString("HH:mm:ss");
             Invalidate(rCards);

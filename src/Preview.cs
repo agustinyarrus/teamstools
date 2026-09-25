@@ -176,6 +176,66 @@ namespace TeamsTools
         public void Poner(params Dato[] filas) { Filas = filas.ToList(); Invalidate(); }
         public void Poner(List<Dato> filas) { Filas = filas ?? new List<Dato>(); Invalidate(); }
 
+        /// <summary>Escalera de tamaños de letra de las filas, de la más cómoda a la más apretada.</summary>
+        static readonly float[] Escalera = { 8.5f, 8f, 7.5f, 7f };
+
+        /// <summary>Alto de línea nominal de una fuente (en px de este control): la medida cómoda para el alto preferido.</summary>
+        static int AltoLinea(Graphics g, Font f) => Tema.Medir(g, "Ág", f).Height;
+
+        static readonly Dictionary<string, int> tinta = new Dictionary<string, int>();
+        /// <summary>
+        /// Alto de la TINTA de «Ág» (acento arriba, descendente abajo): lo que de verdad ocupa una línea dibujada.
+        /// MeasureText devuelve el alto nominal, que en Cascadia es un 20 % más que el dibujo y obligaba a filas más
+        /// flojas de lo necesario (y a tirar filas). Se mide con GraphicsPath una vez por fuente y DPI (cache).
+        /// </summary>
+        static int AltoTinta(Graphics g, Font f)
+        {
+            string k = f.Name + "|" + f.SizeInPoints.ToString("0.##") + "|" + g.DpiY.ToString("0");
+            lock (tinta)
+            {
+                if (tinta.TryGetValue(k, out int h)) return h;
+                using (var p = new GraphicsPath())
+                {
+                    p.AddString("Ág", f.FontFamily, (int)f.Style, f.SizeInPoints * g.DpiY / 72f, PointF.Empty, StringFormat.GenericTypographic);
+                    h = (int)Math.Ceiling(p.GetBounds().Height);
+                }
+                tinta[k] = h;
+                return h;
+            }
+        }
+
+        /// <summary>Filas en unidades: un dato ocupa una, un título dos (la raya y el rótulo).</summary>
+        int Unidades => Filas.Count + Filas.Count(d => d.Valor == null);
+
+        /// <summary>
+        /// Alto con el que TODAS las filas entran cómodas (letra de 8,5 pt en filas de S(17) o lo que mida la línea).
+        /// Los layouts lo usan para repartir una columna según lo que cada ficha pide, en vez de por porcentajes fijos
+        /// que dejaban a una con medio panel vacío y a la otra con las líneas encimadas.
+        /// </summary>
+        public int AltoPreferido()
+        {
+            float esc = Dpi.Escala(this);
+            int S(int px) => Dpi.S(esc, px);
+            if (Filas.Count == 0) return S(30) + S(18) + S(8);
+            int fila;
+            using (var g = CreateGraphics()) fila = Math.Max(S(17), AltoLinea(g, Tema.Media(Escalera[0])) + S(2));
+            return S(30) + Unidades * fila + S(4);
+        }
+
+        /// <summary>
+        /// Alto por debajo del cual la ficha empieza a perder filas: todas apretadas (la tinta de la letra de 7,5 pt).
+        /// Es lo que una ficha cede antes de que el reparto le saque lugar a un gráfico, que no sabe apretarse.
+        /// </summary>
+        public int AltoMinimo()
+        {
+            float esc = Dpi.Escala(this);
+            int S(int px) => Dpi.S(esc, px);
+            if (Filas.Count == 0) return AltoPreferido();
+            int fila;
+            using (var g = CreateGraphics()) fila = Math.Max(S(10), AltoTinta(g, Tema.Media(Escalera[2])));   // 7,5 pt, apretada
+            return S(30) + Unidades * fila + S(4);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -189,10 +249,16 @@ namespace TeamsTools
             Tema.Texto_(g, Etiqueta.ToUpperInvariant(), Tema.Media(7.5f), Tema.Apagado, new Rectangle(S(14) + pd + S(7), S(10), Width - S(30), S(14)));
             if (Filas.Count == 0) { Tema.Texto_(g, Vacio, Tema.Fina(9f), Tema.Apagado, new Rectangle(S(16), S(30), Width - S(32), S(18))); return; }
             // alto de fila que hace entrar TODO (con mínimo legible); los títulos ocupan una fila y pico
-            int disponible = Height - S(30) - S(6);
-            int unidades = Filas.Count + Filas.Count(d => d.Valor == null);
+            int disponible = Height - S(30) - S(4);
+            int unidades = Unidades;
             int fila = Math.Max(S(10), Math.Min(S(17), unidades > 0 ? disponible / unidades : S(17)));
-            float ptF = fila >= S(16) ? 8.5f : fila >= S(14) ? 8f : 7.5f;
+            // la letra baja un escalón por cada tanto de fila que falta (los umbrales están afinados a ojo para que
+            // una ficha llena se lea pareja); con muy poco lugar hay un cuarto escalón de 7 pt
+            float ptF = fila >= S(16) ? Escalera[0] : fila >= S(14) ? Escalera[1] : fila >= S(12) ? Escalera[2] : Escalera[3];
+            // 🚨 Los umbrales dan por hecho que la fuente escala igual que la métrica; con escalaFuente distinto de 0,8
+            //    la letra puede quedar más alta que la fila y las líneas se PISAN. La fila nunca baja de la tinta
+            //    medida de la letra elegida: si no entran todas, sobran filas abajo (se cortan), pero nada se encima.
+            fila = Math.Max(fila, AltoTinta(g, Tema.Media(ptF)));
             int y = S(30), xE = S(16);
             var fe = Tema.Fina(ptF); var fv = Tema.Media(ptF); var ft = Tema.Media(ptF - 1f);
             // 🚨 La etiqueta se llevaba el 52 % SIEMPRE: los valores largos («Driscoll · 6.2a», «0,36-0,54×
@@ -348,6 +414,22 @@ namespace TeamsTools
         }
 
         public void Poner(List<Barra> d, string total = null) { Datos = d ?? new List<Barra>(); if (total != null) Total = total; Invalidate(); }
+
+        /// <summary>Alto con el que entran todas las barras vivas: cabecera + una fila por barra + aire abajo.</summary>
+        public int AltoPreferido()
+        {
+            float esc = Dpi.Escala(this);
+            int vivas = Math.Max(1, Datos.Count(d => d.Valor > 0));
+            return Dpi.S(esc, 32) + vivas * Dpi.S(esc, 20) + Dpi.S(esc, 6);
+        }
+
+        /// <summary>Alto con al menos las tres barras más altas (vienen ordenadas): lo que un gráfico cede como mucho.</summary>
+        public int AltoMinimo()
+        {
+            float esc = Dpi.Escala(this);
+            int vivas = Math.Max(1, Math.Min(3, Datos.Count(d => d.Valor > 0)));
+            return Dpi.S(esc, 32) + vivas * Dpi.S(esc, 20) + Dpi.S(esc, 6);
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {

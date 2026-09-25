@@ -833,7 +833,11 @@ namespace TeamsTools
 
             // --- el stepper: cinco nodos unidos por un riel que se llena hasta el último hecho
             var pasos = Pasos();
-            int n = pasos.Length, x0 = S(26), x1 = Width - S(26), yN = S(44);
+            var fEtiqueta = Tema.Fina(8.5f);
+            // 🚨 el primer y el último nombre van centrados en su nodo: con el nodo a S(26) del borde y un nombre
+            //    («grabación») que mide más del doble, la mitad quedaba afuera del panel. El margen se MIDE.
+            int margen = Math.Max(S(26), pasos.Max(p => Tema.Medir(gr, p.nombre, fEtiqueta).Width) / 2 + S(6));
+            int n = pasos.Length, x0 = margen, x1 = Width - margen, yN = S(44);
             float paso = (x1 - x0) / (float)(n - 1), dn = S(12);
             int hechos = pasos.TakeWhile(p => p.paso == Paso.Hecho || p.paso == Paso.Salteado).Count();
             using (var p = new Pen(Tema.Alpha(Tema.Texto, 22), S(2))) gr.DrawLine(p, x0, yN, x1, yN);
@@ -866,7 +870,7 @@ namespace TeamsTools
                         break;
                 }
                 var rt = new Rectangle((int)(cx - paso / 2), yN + S(10), (int)paso, S(14));
-                Tema.Texto_(gr, nombre, Tema.Fina(8.5f), estado == Paso.Pendiente ? Tema.Apagado : Tema.Texto, rt, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                Tema.Texto_(gr, nombre, fEtiqueta, estado == Paso.Pendiente ? Tema.Apagado : Tema.Texto, rt, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 if (nota.Length > 0) Tema.Texto_(gr, nota, Tema.Mono(7.5f), c, new Rectangle(rt.X, rt.Bottom, rt.Width, S(13)), TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
 
