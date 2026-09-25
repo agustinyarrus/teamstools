@@ -1,0 +1,53 @@
+# Salida de compilación: el exe va al Release, no al repo
+dist/
+obj/
+bin/
+_probe/
+
+# Datos de la app (NUNCA al repo: son las reuniones, los chats y la presencia de gente real)
+datos/
+**/datos/
+*.jsonl
+grabaciones/
+
+# Trabajo local de publicación (capturas de la demo, juego de datos ficticio, scripts de subida)
+_publicar/
+
+# Volcados y salidas de las sondas de diagnóstico: traen árboles UIA con nombres reales
+diag/out/
+diag/capturas/
+diag/**/bin/
+diag/**/obj/
+diag/**/out/
+diag/espia-ventanas/*.log
+diag/espia-ventanas/*.txt
+diag/espia-ventanas/*.exe
+
+# Copias de seguridad que deja el flujo de trabajo
+*.bak
+*.bak-*
+*.anterior
+*~*.TMP
+
+# Herramientas compiladas (se compilan con build.ps1 -Herramientas)
+tools/loopcap/*.exe
+tools/**/__pycache__/
+__pycache__/
+*.pyc
+
+# Modelos y cachés de los scripts de Python
+tools/transcribe/banco/
+tools/transcribe/tts-cache/
+*.npz
+*.onnx
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# Varios
+*.log
+Thumbs.db
+desktop.ini
